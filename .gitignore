@@ -1,7 +1,7 @@
 
-# Created by https://www.gitignore.io/api/java,macos,python,windows,intellij,jupyternotebook
+# Created by https://www.gitignore.io/api/java,maven,macos,python,windows,intellij+all,jupyternotebook
 
-### Intellij ###
+### Intellij+all ###
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio and WebStorm
 # Reference: https://intellij-support.jetbrains.com/hc/en-us/articles/206544839
 
@@ -66,16 +66,18 @@ fabric.properties
 # Editor-based Rest Client
 .idea/httpRequests
 
-### Intellij Patch ###
-# Comment Reason: https://github.com/joeblau/gitignore.io/issues/186#issuecomment-215987721
+### Intellij+all Patch ###
+# Ignores the whole .idea folder and all .iml files
+# See https://github.com/joeblau/gitignore.io/issues/186 and https://github.com/joeblau/gitignore.io/issues/360
 
-# *.iml
-# modules.xml
-# .idea/misc.xml
-# *.ipr
+.idea/
 
-# Sonarlint plugin
-.idea/sonarlint
+# Reason: https://github.com/joeblau/gitignore.io/issues/186#issuecomment-249601023
+
+*.iml
+modules.xml
+.idea/misc.xml
+*.ipr
 
 ### Java ###
 # Compiled class file
@@ -137,6 +139,18 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
+
+### Maven ###
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
@@ -207,7 +221,6 @@ instance/
 docs/_build/
 
 # PyBuilder
-target/
 
 # Jupyter Notebook
 
@@ -289,4 +302,4 @@ $RECYCLE.BIN/
 *.lnk
 
 
-# End of https://www.gitignore.io/api/java,macos,python,windows,intellij,jupyternotebook
+# End of https://www.gitignore.io/api/java,maven,macos,python,windows,intellij+all,jupyternotebook
