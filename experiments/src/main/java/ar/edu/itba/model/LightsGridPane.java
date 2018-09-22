@@ -1,20 +1,21 @@
 package ar.edu.itba.model;
 
 import java.util.Arrays;
+import javafx.geometry.Pos;
 import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.Circle;
 import javafx.scene.shape.Shape;
 
 public class LightsGridPane extends GridPane {
 
-  private static final Color CURRENT_COLOR = Color.MEDIUMSEAGREEN;
-  private static final Color GOAL_COLOR = Color.BLUE;
-  private static final Color EMPTY_COLOR = Color.GRAY;
-  private static final Color WIN_COLOR = Color.YELLOW;
+  private static final Color CURRENT_COLOR = Color.YELLOW;
+  private static final Color GOAL_COLOR = Color.MEDIUMSEAGREEN;
+  private static final Color EMPTY_COLOR = Color.DARKGRAY;
+  private static final Color WIN_COLOR = Color.GREENYELLOW;
 
-  private static final int GAP_SIZE = 5;
-  private static final int SHAPE_SIZE = 50;
+  private static final int GAP_SIZE = 12;
+  private static final int SHAPE_SIZE = 40;
 
   private final int rows;
   private final int cols;
@@ -33,7 +34,7 @@ public class LightsGridPane extends GridPane {
 
     for (int row = 0; row < rows; row++) {
       for (int col = 0; col < cols; col++) {
-        final Shape rec = new Rectangle(SHAPE_SIZE, SHAPE_SIZE, EMPTY_COLOR);
+        final Shape rec = new Circle(SHAPE_SIZE, EMPTY_COLOR);
         this.shapes[row][col] = rec;
         this.add(rec, col, row);
       }
@@ -46,6 +47,7 @@ public class LightsGridPane extends GridPane {
     this.setVgap(GAP_SIZE);
     this.setLayoutX(GAP_SIZE);
     this.setLayoutY(GAP_SIZE);
+    this.setAlignment(Pos.CENTER);
   }
 
   public void moveLightWithOffset(final int[] offset) {
