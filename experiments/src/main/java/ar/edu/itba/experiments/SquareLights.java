@@ -84,6 +84,8 @@ public class SquareLights extends Application {
         primaryStage.setTitle("Square Lights");
         primaryStage.setScene(scene);
         primaryStage.setResizable(false);
+        primaryStage.setMaximized(true);
+        primaryStage.setFullScreen(true);
         primaryStage.show();
 
         movements.add(new int[]{-1, 0});
