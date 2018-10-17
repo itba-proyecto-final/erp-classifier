@@ -1,10 +1,14 @@
 package ar.edu.itba.experiments;
 
+import static java.lang.Math.abs;
+
+import ar.edu.itba.model.CounterPane;
 import ar.edu.itba.model.LightsGridPane;
 import ar.edu.itba.model.StartScreen;
 import ar.edu.itba.senders.StimulusSender;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
@@ -27,10 +31,11 @@ import javafx.util.Duration;
 public class GridLightsExperiment extends Application {
 
   private static final Random RANDOM = ThreadLocalRandom.current();
-  private static final List<int[]> movements = new ArrayList(4);
+  private static final List<int[]> movements = new ArrayList<>(4);
+  private static final int MAX_ITERATION = 10;
   private static final int ROWS = 1;
-  private static final int COLS = 10;
-  private static final int[] GOAL_POSITION = new int[]{0, 3};
+  private static final int COLS = 6;
+  private static final Duration STEP_DURATION = Duration.seconds(3);
 
   static {
     movements.add(new int[]{-1, 0});
@@ -38,9 +43,12 @@ public class GridLightsExperiment extends Application {
     movements.add(new int[]{0, 1});
     movements.add(new int[]{0, -1});
   }
-  private int[] currentPosition = new int[]{0, 0};
+
+  private int iteration = 1;
+  private int[] currentPosition;
 
   private BorderPane pane;
+  private CounterPane counterPane;
   private LightsGridPane currentGrid;
 
   public static void main(String[] args) {
@@ -50,7 +58,13 @@ public class GridLightsExperiment extends Application {
   @Override
   public void start(Stage primaryStage) {
     final StartScreen startScreen = new StartScreen();
-    startScreen.setOnStart(this::startExperiment);
+    startScreen.setOnStart(() -> {
+      pane.setCenter(counterPane);
+      counterPane.startTimer();
+    });
+
+    counterPane = new CounterPane();
+    counterPane.setOnTimerFinished(this::startExperiment);
 
     pane = new BorderPane(startScreen);
     pane.setBackground(
@@ -76,41 +90,54 @@ public class GridLightsExperiment extends Application {
   }
 
   private void startExperiment() {
-    currentGrid = new LightsGridPane(ROWS, COLS, currentPosition, GOAL_POSITION);
+    final int[] startingPosition = newStartingPosition();
+    currentPosition = Arrays.copyOf(startingPosition, startingPosition.length);
+    final int[] goalPosition = newGoalPosition();
+    currentGrid = new LightsGridPane(ROWS, COLS, currentPosition, goalPosition);
     pane.setCenter(currentGrid);
 
     final StimulusSender sender = new StimulusSender();
     try {
-      sender.open("localhost", 15361);
+      sender.open("10.17.2.185", 15361);
+      sender.send(3L, 0L);
     } catch (final IOException e) {
       e.printStackTrace();
       return;
     }
 
     final Timeline timeline = new Timeline();
-    final KeyFrame keyFrame = new KeyFrame(Duration.seconds(3), e -> {
-      final int prevDistance = distanceToGoal();
+    final KeyFrame keyFrame = new KeyFrame(STEP_DURATION, e -> {
+      final int prevDistance = distanceToGoal(goalPosition);
       final List<int[]> validMovements = movements.stream()
           .filter(currentGrid::isValidOffset)
           .collect(Collectors.toList());
       final int[] movement = validMovements.get(RANDOM.nextInt(validMovements.size()));
       moveLightWithOffset(movement);
 
-      final int currentDistance = distanceToGoal();
-      if (distanceToGoal() == 0) {
+      if (distanceToGoal(goalPosition) == 0) {
         timeline.stop();
         try {
+          sender.send(4L, 0L);
           sender.close();
         } catch (Exception e1) {
           e1.printStackTrace();
         }
-      }
-      final long distanceDifference = prevDistance - currentDistance;
-      try {
-        System.out.println(String.format("%d sent", distanceDifference));
-        sender.send(distanceDifference, 0L);
-      } catch (Exception exception) {
-        exception.printStackTrace();
+        if (iteration < MAX_ITERATION) {
+          iteration++;
+          final Timeline tl = new Timeline(new KeyFrame(STEP_DURATION, oe -> {
+            pane.setCenter(counterPane);
+            counterPane.startTimer();
+          }));
+          tl.play();
+        }
+      } else {
+        final int currentDistance = distanceToGoal(goalPosition);
+        final long distanceDifference = prevDistance - currentDistance;
+        try {
+          sender.send(distanceDifference > 0 ? 1 : 2, 0L);
+        } catch (Exception exception) {
+          exception.printStackTrace();
+        }
       }
     });
     timeline.getKeyFrames().add(keyFrame);
@@ -124,8 +151,21 @@ public class GridLightsExperiment extends Application {
     currentGrid.moveLightWithOffset(offset);
   }
 
-  private int distanceToGoal() {
-    return Math.abs(currentPosition[0] - GOAL_POSITION[0]) + Math
-        .abs(currentPosition[1] - GOAL_POSITION[1]);
+  private int[] newStartingPosition() {
+    return new int[]{RANDOM.nextInt(ROWS), RANDOM.nextInt(COLS)};
+  }
+
+  private int[] newGoalPosition() {
+    int[] goalPosition;
+
+    do {
+      goalPosition = new int[]{RANDOM.nextInt(ROWS), RANDOM.nextInt(COLS)};
+    } while (distanceToGoal(goalPosition) <= 1);
+
+    return goalPosition;
+  }
+
+  private int distanceToGoal(final int[] goalPosition) {
+    return abs(currentPosition[0] - goalPosition[0]) + abs(currentPosition[1] - goalPosition[1]);
   }
 }
