@@ -9,10 +9,10 @@ import javafx.scene.shape.Shape;
 
 public class LightsGridPane extends GridPane {
 
-  private static final Color CURRENT_COLOR = Color.YELLOW;
-  private static final Color GOAL_COLOR = Color.MEDIUMSEAGREEN;
+  private static final Color PERSECUTOR_COLOR = Color.BLUE;
+  private static final Color PURSUED_COLOR = Color.MEDIUMSEAGREEN;
   private static final Color EMPTY_COLOR = Color.DARKGRAY;
-  private static final Color WIN_COLOR = Color.GREENYELLOW;
+  private static final Color WIN_COLOR = Color.RED;
 
   private static final int GAP_SIZE = 12;
   private static final int SHAPE_SIZE = 40;
@@ -21,16 +21,16 @@ public class LightsGridPane extends GridPane {
   private final int cols;
   private final Shape[][] shapes;
 
-  private final int[] goalPosition;
-  private final int[] currentPosition;
+  private final int[] persecutorPosition;
+  private final int[] pursuedPosition;
 
-  public LightsGridPane(final int rows, final int cols, final int[] startingPosition,
-      final int[] goalPosition) {
+  public LightsGridPane(final int rows, final int cols, final int[] persecutorPosition,
+      final int[] pursuedPosition) {
     this.rows = rows;
     this.cols = cols;
     this.shapes = new Shape[rows][cols];
-    this.goalPosition = Arrays.copyOf(goalPosition, goalPosition.length);
-    this.currentPosition = Arrays.copyOf(startingPosition, startingPosition.length);
+    this.pursuedPosition = Arrays.copyOf(pursuedPosition, pursuedPosition.length);
+    this.persecutorPosition = Arrays.copyOf(persecutorPosition, persecutorPosition.length);
 
     for (int row = 0; row < rows; row++) {
       for (int col = 0; col < cols; col++) {
@@ -40,8 +40,8 @@ public class LightsGridPane extends GridPane {
       }
     }
 
-    this.shapes[currentPosition[0]][currentPosition[1]].setFill(CURRENT_COLOR);
-    this.shapes[goalPosition[0]][goalPosition[1]].setFill(GOAL_COLOR);
+    this.shapes[this.persecutorPosition[0]][this.persecutorPosition[1]].setFill(PERSECUTOR_COLOR);
+    this.shapes[pursuedPosition[0]][pursuedPosition[1]].setFill(PURSUED_COLOR);
 
     this.setHgap(GAP_SIZE);
     this.setVgap(GAP_SIZE);
@@ -50,27 +50,28 @@ public class LightsGridPane extends GridPane {
     this.setAlignment(Pos.CENTER);
   }
 
-  public void moveLightWithOffset(final int[] offset) {
-    shapes[currentPosition[0]][currentPosition[1]].setFill(EMPTY_COLOR);
-    currentPosition[0] += offset[0];
-    currentPosition[1] += offset[1];
-    if (Arrays.equals(currentPosition, goalPosition)) {
-      shapes[currentPosition[0]][currentPosition[1]].setFill(WIN_COLOR);
+  public void movePersecutorWithOffset(final int[] offset){
+    moveLightWithOffset(persecutorPosition, offset, PERSECUTOR_COLOR);
+  }
+
+  public void movePursuedWithOffset(final int[] offset){
+    moveLightWithOffset(pursuedPosition, offset, PURSUED_COLOR);
+  }
+
+  private void moveLightWithOffset(final int[] position, final int[] offset, final Color color) {
+    shapes[position[0]][position[1]].setFill(EMPTY_COLOR);
+    position[0] += offset[0];
+    position[1] += offset[1];
+    if (Arrays.equals(persecutorPosition, pursuedPosition)) {
+      shapes[position[0]][position[1]].setFill(WIN_COLOR);
     } else {
-      shapes[currentPosition[0]][currentPosition[1]].setFill(CURRENT_COLOR);
+      shapes[position[0]][position[1]].setFill(color);
     }
   }
 
-  public void moveLightWithOffset(final int rowOffset, final int colOffset) {
-    shapes[currentPosition[0]][currentPosition[1]].setFill(EMPTY_COLOR);
-    currentPosition[0] += rowOffset;
-    currentPosition[1] += colOffset;
-    shapes[currentPosition[0]][currentPosition[1]].setFill(CURRENT_COLOR);
-  }
-
   public boolean isValidOffset(int[] movement) {
-    int newRow = currentPosition[0] + movement[0];
-    int newCol = currentPosition[1] + movement[1];
+    int newRow = persecutorPosition[0] + movement[0];
+    int newCol = persecutorPosition[1] + movement[1];
     return newRow >= 0 && newRow < rows && newCol >= 0 && newCol < cols;
   }
 }
