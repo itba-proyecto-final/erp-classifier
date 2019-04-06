@@ -2,6 +2,7 @@ package ar.edu.itba.experiments;
 
 import static java.lang.Math.abs;
 
+import ar.edu.itba.model.EventsCounter;
 import ar.edu.itba.model.CounterPane;
 import ar.edu.itba.model.LightsGridPane;
 import ar.edu.itba.model.StartScreen;
@@ -37,10 +38,10 @@ public class GridLightsExperiment extends Application {
   private static final List<int[]> movements = Arrays.asList(new int[]{-1, 0}, new int[]{1, 0}, new int[]{0, 1},
           new int[]{0, -1});
   private static final List<MovementBehaviour> MOVEMENT_PATTERNS = Arrays.asList(new LeftRightBehaviour(), new UpDownBehaviour(),
-          (p,r,c) -> new int[]{0,0}, new ClockwiseBehaviour(), new CounterClockwiseBehaviour());
-  private static final int MAX_ITERATION = 10;
-  private static final int ROWS = 6;
-  private static final int COLS = 6;
+          (p, r, c) -> new int[]{0, 0}, new ClockwiseBehaviour(), new CounterClockwiseBehaviour());
+  private static final int MAX_ITERATION = 1;
+  private static final int ROWS = 5;
+  private static final int COLS = 5;
   private static final boolean SEND = false;
   private static final Duration STEP_DURATION = Duration.seconds(2);
   private static final String HOST = "10.17.2.185";
@@ -49,6 +50,14 @@ public class GridLightsExperiment extends Application {
   private int iteration = 1;
   private int[] persecutorPosition;
   private int[] pursuedPosition;
+
+  private static final String START = "start";
+  private static final String FINISH = "finish";
+  private static final String CLOSER = "closer";
+  private static final String SAME_DISTANCE = "same distance";
+  private static final String FURTHER = "further";
+  private static final String[] LABELS = new String[]{START, FINISH, CLOSER, SAME_DISTANCE, FURTHER};
+  private static final EventsCounter EVENTS_COUNTER = new EventsCounter(LABELS);
 
   private BorderPane pane;
   private CounterPane counterPane;
@@ -93,6 +102,7 @@ public class GridLightsExperiment extends Application {
   }
 
   private void startExperiment() {
+    EVENTS_COUNTER.count(START);
     persecutorPosition = newStartingPosition();
     pursuedPosition = newPursuedPosition();
     final MovementBehaviour movementBehaviour = MOVEMENT_PATTERNS.get(RANDOM.nextInt(MOVEMENT_PATTERNS.size()));
@@ -118,13 +128,14 @@ public class GridLightsExperiment extends Application {
               .collect(Collectors.toList());
       final int[] movement = validMovements.get(RANDOM.nextInt(validMovements.size()));
       moveLightWithOffset(persecutorPosition, movement, currentGrid::movePersecutorWithOffset);
-      if(!Arrays.equals(persecutorPosition, pursuedPosition)){
+      if (!Arrays.equals(persecutorPosition, pursuedPosition)) {
         moveLightWithOffset(pursuedPosition, movementBehaviour.getOffset(pursuedPosition, ROWS, COLS),
                 currentGrid::movePursuedWithOffset);
       }
 
 
       if (distanceToPursued(pursuedPosition) == 0) {
+        EVENTS_COUNTER.count(FINISH, CLOSER);
         timeline.stop();
         if (SEND) {
           try {
@@ -141,13 +152,16 @@ public class GridLightsExperiment extends Application {
             counterPane.startTimer();
           }));
           tl.play();
+        } else {
+          System.out.println(EVENTS_COUNTER);
         }
       } else {
-        final int currentDistance = distanceToPursued (pursuedPosition);
+        final int currentDistance = distanceToPursued(pursuedPosition);
         final long distanceDifference = prevDistance - currentDistance;
+        EVENTS_COUNTER.count(getLabelByDistanceDifference(distanceDifference));
         if (SEND) {
           try {
-            sender.send(distanceDifference > 0 ? 1 : 2, 0L);
+            sender.send(distanceDifference >= 0 ? 1 : 2, 0L);
           } catch (Exception exception) {
             exception.printStackTrace();
           }
@@ -159,7 +173,7 @@ public class GridLightsExperiment extends Application {
     timeline.play();
   }
 
-  private void moveLightWithOffset(int[] position, final int[] offset, final Consumer<int[]> consumer){
+  private void moveLightWithOffset(int[] position, final int[] offset, final Consumer<int[]> consumer) {
     position[0] += offset[0];
     position[1] += offset[1];
     consumer.accept(offset);
@@ -181,5 +195,12 @@ public class GridLightsExperiment extends Application {
 
   private int distanceToPursued(final int[] goalPosition) {
     return abs(persecutorPosition[0] - goalPosition[0]) + abs(persecutorPosition[1] - goalPosition[1]);
+  }
+
+  private String getLabelByDistanceDifference(final long distanceDifference) {
+    if (distanceDifference == 0) {
+      return SAME_DISTANCE;
+    }
+    return distanceDifference > 0 ? CLOSER : FURTHER;
   }
 }
