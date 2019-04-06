@@ -1,12 +1,12 @@
-package ar.edu.itba.model.movementPatterns;
+package ar.edu.itba.model.behaviours;
 
 import java.util.Random;
 
-public class LeftRightPattern implements MovementPattern {
+public class LeftRightBehaviour implements MovementBehaviour {
 
   private int direction;
 
-  public LeftRightPattern() {
+  public LeftRightBehaviour() {
     final Random r = new Random();
     direction = r.nextBoolean() ? 1 : -1;
   }

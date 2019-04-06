@@ -5,7 +5,7 @@ import static java.lang.Math.abs;
 import ar.edu.itba.model.CounterPane;
 import ar.edu.itba.model.LightsGridPane;
 import ar.edu.itba.model.StartScreen;
-import ar.edu.itba.model.movementPatterns.*;
+import ar.edu.itba.model.behaviours.*;
 import ar.edu.itba.senders.StimulusSender;
 
 import java.io.IOException;
@@ -13,7 +13,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -37,8 +36,8 @@ public class GridLightsExperiment extends Application {
   private static final Random RANDOM = ThreadLocalRandom.current();
   private static final List<int[]> movements = Arrays.asList(new int[]{-1, 0}, new int[]{1, 0}, new int[]{0, 1},
           new int[]{0, -1});
-  private static final List<MovementPattern> MOVEMENT_PATTERNS = Arrays.asList(new LeftRightPattern(), new UpDownPattern(),
-          (p,r,c) -> new int[]{0,0}, new ClockwisePattern(), new CounterClockwisePattern());
+  private static final List<MovementBehaviour> MOVEMENT_PATTERNS = Arrays.asList(new LeftRightBehaviour(), new UpDownBehaviour(),
+          (p,r,c) -> new int[]{0,0}, new ClockwiseBehaviour(), new CounterClockwiseBehaviour());
   private static final int MAX_ITERATION = 10;
   private static final int ROWS = 6;
   private static final int COLS = 6;
@@ -96,7 +95,7 @@ public class GridLightsExperiment extends Application {
   private void startExperiment() {
     persecutorPosition = newStartingPosition();
     pursuedPosition = newPursuedPosition();
-    final MovementPattern movementPattern = MOVEMENT_PATTERNS.get(RANDOM.nextInt(MOVEMENT_PATTERNS.size()));
+    final MovementBehaviour movementBehaviour = MOVEMENT_PATTERNS.get(RANDOM.nextInt(MOVEMENT_PATTERNS.size()));
     currentGrid = new LightsGridPane(ROWS, COLS, persecutorPosition, pursuedPosition);
     pane.setCenter(currentGrid);
 
@@ -120,7 +119,7 @@ public class GridLightsExperiment extends Application {
       final int[] movement = validMovements.get(RANDOM.nextInt(validMovements.size()));
       moveLightWithOffset(persecutorPosition, movement, currentGrid::movePersecutorWithOffset);
       if(!Arrays.equals(persecutorPosition, pursuedPosition)){
-        moveLightWithOffset(pursuedPosition, movementPattern.getOffset(pursuedPosition, ROWS, COLS),
+        moveLightWithOffset(pursuedPosition, movementBehaviour.getOffset(pursuedPosition, ROWS, COLS),
                 currentGrid::movePursuedWithOffset);
       }
 

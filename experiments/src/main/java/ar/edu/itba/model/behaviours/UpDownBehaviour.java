@@ -1,12 +1,12 @@
-package ar.edu.itba.model.movementPatterns;
+package ar.edu.itba.model.behaviours;
 
 import java.util.Random;
 
-public class UpDownPattern implements MovementPattern {
+public class UpDownBehaviour implements MovementBehaviour {
 
   private int direction;
 
-  public UpDownPattern() {
+  public UpDownBehaviour() {
     final Random r = new Random();
     direction = r.nextBoolean() ? 1 : -1;
   }

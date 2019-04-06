@@ -1,11 +1,11 @@
-package ar.edu.itba.model.movementPatterns;
+package ar.edu.itba.model.behaviours;
 
 import com.sun.javafx.scene.traversal.Direction;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class CircularPattern implements MovementPattern {
+public abstract class CircularBehaviour implements MovementBehaviour {
 
   protected static final Map<Direction, int[]> MAP = new HashMap<>();
   protected Direction direction;
