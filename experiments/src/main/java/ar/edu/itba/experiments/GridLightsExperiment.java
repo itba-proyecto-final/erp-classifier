@@ -9,6 +9,7 @@ import ar.edu.itba.model.StartScreen;
 import ar.edu.itba.model.behaviours.*;
 import ar.edu.itba.senders.StimulusSender;
 
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
@@ -39,9 +40,9 @@ public class GridLightsExperiment extends Application {
           new int[]{0, -1});
   private static final List<MovementBehaviour> MOVEMENT_PATTERNS = Arrays.asList(new LeftRightBehaviour(), new UpDownBehaviour(),
           (p, r, c) -> new int[]{0, 0}, new ClockwiseBehaviour(), new CounterClockwiseBehaviour());
-  private static final int MAX_ITERATION = 1;
-  private static final int ROWS = 5;
-  private static final int COLS = 5;
+  private static final int MAX_ITERATION = 2;
+  private static final int ROWS = 3;
+  private static final int COLS = 3;
   private static final boolean SEND = false;
   private static final Duration STEP_DURATION = Duration.seconds(2);
   private static final String HOST = "10.17.2.185";
@@ -58,6 +59,8 @@ public class GridLightsExperiment extends Application {
   private static final String FURTHER = "further";
   private static final String[] LABELS = new String[]{START, FINISH, CLOSER, SAME_DISTANCE, FURTHER};
   private static final EventsCounter EVENTS_COUNTER = new EventsCounter(LABELS);
+
+  private static final String FILENAME = "grid_lights_experiment";
 
   private BorderPane pane;
   private CounterPane counterPane;
@@ -76,7 +79,13 @@ public class GridLightsExperiment extends Application {
     });
 
     counterPane = new CounterPane();
-    counterPane.setOnTimerFinished(this::startExperiment);
+    counterPane.setOnTimerFinished(() -> {
+      try {
+        startExperiment();
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    });
 
     pane = new BorderPane(startScreen);
     pane.setBackground(
@@ -101,13 +110,18 @@ public class GridLightsExperiment extends Application {
     primaryStage.setHeight(bounds.getHeight());
   }
 
-  private void startExperiment() {
+  private void startExperiment() throws IOException {
+    FileWriter fileWriter = new FileWriter(FILENAME + '_' + String.valueOf(iteration));
+    fileWriter.write(String.valueOf(ROWS) + 'x' + String.valueOf(COLS));
+    fileWriter.write('\n');
     EVENTS_COUNTER.count(START);
+
     persecutorPosition = newStartingPosition();
     pursuedPosition = newPursuedPosition();
     final MovementBehaviour movementBehaviour = MOVEMENT_PATTERNS.get(RANDOM.nextInt(MOVEMENT_PATTERNS.size()));
     currentGrid = new LightsGridPane(ROWS, COLS, persecutorPosition, pursuedPosition);
     pane.setCenter(currentGrid);
+    fileWriter.write(stateToString());
 
     final StimulusSender sender = new StimulusSender();
     if (SEND) {
@@ -133,10 +147,20 @@ public class GridLightsExperiment extends Application {
                 currentGrid::movePursuedWithOffset);
       }
 
+      try {
+        fileWriter.write(stateToString());
+      } catch (IOException e1) {
+        e1.printStackTrace();
+      }
 
       if (distanceToPursued(pursuedPosition) == 0) {
         EVENTS_COUNTER.count(FINISH, CLOSER);
         timeline.stop();
+        try {
+          fileWriter.close();
+        } catch (IOException e1) {
+          e1.printStackTrace();
+        }
         if (SEND) {
           try {
             sender.send(4L, 0L);
@@ -202,5 +226,23 @@ public class GridLightsExperiment extends Application {
       return SAME_DISTANCE;
     }
     return distanceDifference > 0 ? CLOSER : FURTHER;
+  }
+
+  private String stateToString() {
+    StringBuilder sb = new StringBuilder();
+    for (int row = 0; row < ROWS; row++) {
+      for (int col = 0; col < COLS; col++) {
+        if (pursuedPosition[0] == row && pursuedPosition[1] == col) {
+          sb.append('G');
+        } else if (persecutorPosition[0] == row && persecutorPosition[1] == col) {
+          sb.append('P');
+        } else {
+          sb.append('-');
+        }
+      }
+      sb.append('\n');
+    }
+    sb.append('\n');
+    return sb.toString();
   }
 }
