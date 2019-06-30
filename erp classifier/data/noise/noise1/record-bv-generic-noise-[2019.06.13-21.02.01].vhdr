@@ -1,0 +1,19 @@
+Brain Vision Data Exchange Header File Version 1.0
+[Common Infos]
+DataFile=record-bv-generic-noise-[2019.06.13-21.02.01].eeg
+MarkerFile=record-bv-generic-noise-[2019.06.13-21.02.01].vmrk
+DataFormat=BINARY
+DataOrientation=MULTIPLEXED
+NumberOfChannels=8
+SamplingInterval=4000
+[Binary Infos]
+BinaryFormat=IEEE_FLOAT_32
+[Channel Infos]
+Ch1=FZ,,1
+Ch2=CZ,,1
+Ch3=P3,,1
+Ch4=PZ,,1
+Ch5=P4,,1
+Ch6=PO7,,1
+Ch7=PO8,,1
+Ch8=OZ,,1

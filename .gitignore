@@ -303,3 +303,9 @@ $RECYCLE.BIN/
 
 
 # End of https://www.gitignore.io/api/java,maven,macos,python,windows,intellij+all,jupyternotebook
+
+classifiers/
+states/
+rewards/
+*.joblib
+
