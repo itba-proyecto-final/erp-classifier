@@ -14,4 +14,4 @@ classification = tester.test_classifier("../classifiers/nati.joblib", test_exper
 state_files = ["/Users/franbartolome/Downloads/grid_lights_experiment_nati_4.txt",
                "/Users/franbartolome/Downloads/grid_lights_experiment_nati_5.txt"]
 
-utils.merge_predictions_with_states(classification, state_files, utils.grid_lights_rewards, "../state_files/nati.txt")
+utils.merge_predictions_with_states(classification, state_files, utils.grid_lights_rewards, "../rewards/nati.txt")
