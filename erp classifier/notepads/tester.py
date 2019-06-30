@@ -4,6 +4,7 @@ import numpy as np
 from sklearn.metrics import roc_curve, auc, accuracy_score
 from scipy import interp
 
+import utils
 
 def plot_prediction_results(prediction_proba, labels_test):
     fprs = np.linspace(0, 1, 100)
@@ -33,10 +34,13 @@ def plot_prediction_results(prediction_proba, labels_test):
     plt.show()
 
 
-def test_classifier(classifier_path, testing_epochs_data, testing_labels):
+def test_classifier(classifier_path, test_experiences):
+    testing_epochs_data, testing_labels = utils.flatten_experiences(test_experiences)
+
     classifier = joblib.load(classifier_path)
     prediction = classifier.predict(testing_epochs_data)
     print("Accuracy: {}".format(accuracy_score(testing_labels, prediction)))
 
     prediction_proba = classifier.predict_proba(testing_epochs_data)
     plot_prediction_results(prediction_proba, testing_labels)
+    return prediction

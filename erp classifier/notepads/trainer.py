@@ -5,12 +5,14 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.linear_model import LogisticRegression
 
-EVENTS_IDS = {'Closer': 1, 'Further': 2}
+import utils
+
+EVENTS_IDS = {'Closer': 1, 'Further': 2, 'Start': 3, 'Finish': 4}
 EVENTS_TMIN = 0.0
 EVENTS_TMAX = 2.0
 
 
-def get_epochs_data(file):
+def get_experiences(file):
     """
     :param file: file that will be used to generate epochs and its corresponding labels.
     :return: the epochs and its corresponding labels.
@@ -39,44 +41,40 @@ def get_epochs_data(file):
                         reject_tmin=None, reject_tmax=None, detrend=None, on_missing='error',
                         reject_by_annotation=True, metadata=None, verbose=None)
     epochs_labels = epochs.events[:, -1]
-    error_label = 2
-    hit_epochs_labels = np.array([1 if x == error_label else 0 for x in epochs_labels])
-    return epochs.get_data()[:, :8, 1:], hit_epochs_labels
+
+    starts = np.argwhere(epochs_labels == 3).flatten()
+    finishes = np.argwhere(epochs_labels == 4).flatten()
+
+    further_label = 2
+    closer_label = 1
+    hit_epochs_labels = np.array([1 if x == further_label else 0 if x == closer_label else x for x in epochs_labels])
+
+    experiences = []
+
+    for start, finish in zip(starts, finishes):
+        experiences.append(zip(epochs.get_data()[start+1:finish, :8, 1:], hit_epochs_labels[start+1:finish]))
+
+    return experiences
 
 
 def get_epochs_data_list(file_list):
-    epochs_data_list = list()
-    label_list = list()
+    experiences_list = list()
     for file in file_list:
-        epochs_data, labels = get_epochs_data(file)
-        epochs_data_list.append(epochs_data)
-        label_list.append(labels)
-    return epochs_data_list, label_list
+        experiences = get_experiences(file)
+        [experiences_list.append(experience) for experience in experiences]
+    return experiences_list
 
 
-def flatten_epochs_data(epochs_data_list, label_list):
-    """
-    Given a list of epochs data list and a list of label lists,
-    it returns a list containing all epochs data and another one containing all labels.
-    :param epochs_data_list: list of epochs data list
-    :param label_list: list of label lists, where each label is an integer
-    :return: a list containing all epochs data and another one containing all labels
-    """
-    if len(epochs_data_list) != len(label_list):
-        raise ValueError("epochs_data_list and label_list must have the same length")
-    epochs_data = [epoch_data for epochs_data_sublist in epochs_data_list for epoch_data in epochs_data_sublist]
-    labels = [label for label_sublist in label_list for label in label_sublist]
-    return epochs_data, labels
-
-
-def train_classifier(epochs_data, labels, classifier_path, scikit_classifier=LogisticRegression()):
+def train_classifier(experiences, classifier_path, scikit_classifier=LogisticRegression()):
     """
     TODO: hacer bien
-    :param epochs_data:
-    :param labels:
+    :param experiences:
     :param classifier_path:
+    :param scikit_classifier:
     :return:
     """
+
+    epochs_data, labels = utils.flatten_experiences(experiences)
     classifier = make_pipeline(
         mne.decoding.Vectorizer(),  # Transform n-dimensional array into 2D array of n_samples by n_features.
         MinMaxScaler(),  # Transforms features by scaling each feature to a given range (0, 1).
@@ -87,10 +85,10 @@ def train_classifier(epochs_data, labels, classifier_path, scikit_classifier=Log
     return classifier_fit
 
 
-if __name__ == "__main__":
-    epochs, epochs_labels = get_epochs_data(
-        '../data/grid_lights/nati/record-bv-generic-nati-[2019.04.27-19.11.05].vhdr')
-    epochs, epochs_labels = flatten_epochs_data([epochs, epochs], [epochs_labels, epochs_labels])
+# if __name__ == "__main__":
+    # epochs, epochs_labels = get_epochs_data(
+    #     '../data/grid_lights/nati/record-bv-generic-nati-[2019.04.27-19.11.05].vhdr')
+    # epochs, epochs_labels = flatten_epochs_data([epochs, epochs], [epochs_labels, epochs_labels])
     # print(epochs)
     # print(epochs_labels)
-    train_classifier(epochs, epochs_labels, "../classifiers/hola.joblib", LogisticRegression())
+    # train_classifier(epochs, epochs_labels, "../classifiers/hola.joblib", LogisticRegression())
