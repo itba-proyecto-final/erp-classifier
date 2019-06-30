@@ -69,7 +69,7 @@ def flatten_epochs_data(epochs_data_list, label_list):
     return epochs_data, labels
 
 
-def train_classifier(epochs_data, labels, classifier_path):
+def train_classifier(epochs_data, labels, classifier_path, scikit_classifier=LogisticRegression()):
     """
     TODO: hacer bien
     :param epochs_data:
@@ -80,9 +80,8 @@ def train_classifier(epochs_data, labels, classifier_path):
     classifier = make_pipeline(
         mne.decoding.Vectorizer(),  # Transform n-dimensional array into 2D array of n_samples by n_features.
         MinMaxScaler(),  # Transforms features by scaling each feature to a given range (0, 1).
-        LogisticRegression()  # linear model for classification
+        scikit_classifier  # linear model for classification
     )
-
     classifier_fit = classifier.fit(epochs_data, labels)
     joblib.dump(classifier_fit, classifier_path)
     return classifier_fit
@@ -92,6 +91,6 @@ if __name__ == "__main__":
     epochs, epochs_labels = get_epochs_data(
         '../data/grid_lights/nati/record-bv-generic-nati-[2019.04.27-19.11.05].vhdr')
     epochs, epochs_labels = flatten_epochs_data([epochs, epochs], [epochs_labels, epochs_labels])
-    print(epochs)
-    print(epochs_labels)
-    train_classifier(epochs, epochs_labels, "../classifiers/hola.joblib")
+    # print(epochs)
+    # print(epochs_labels)
+    train_classifier(epochs, epochs_labels, "../classifiers/hola.joblib", LogisticRegression())
