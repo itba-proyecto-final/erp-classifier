@@ -6,6 +6,7 @@ from scipy import interp
 
 import utils
 
+
 def plot_prediction_results(prediction_proba, labels_test):
     fprs = np.linspace(0, 1, 100)
 
