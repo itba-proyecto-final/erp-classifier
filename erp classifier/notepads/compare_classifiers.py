@@ -13,37 +13,35 @@ import utils
 
 
 def compare(experiences):
-    print(__doc__)
-
-    # Author: Jan Hendrik Metzen <jhm@informatik.uni-bremen.de>
-    # License: BSD Style.
-
     X, y = utils.flatten_experiences(experiences)
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.30, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.40, random_state=42)
 
-    lr = make_pipeline(
-        mne.decoding.Vectorizer(),  # Transform n-dimensional array into 2D array of n_samples by n_features.
-        MinMaxScaler(),  # Transforms features by scaling each feature to a given range (0, 1).
-        LogisticRegression()  # linear model for classification
+    lr = (
+        LogisticRegression(),
+        {'C': [x/10 for x in range(1, 21)],
+         "penalty": ["l2"], "n_jobs": [-1],
+         "solver": ['newton-cg', 'lbfgs', 'liblinear', 'sag', 'saga']},
+        'Logistic'
     )
-    svc = make_pipeline(
-        mne.decoding.Vectorizer(),  # Transform n-dimensional array into 2D array of n_samples by n_features.
-        MinMaxScaler(),  # Transforms features by scaling each feature to a given range (0, 1).
-        LinearSVC(C=90.0)  # linear model for classification
+    svc = (
+        LinearSVC(),
+        {'C': [90]},
+        'Support Vector Classification'
+    )
+    rfc = (
+        RandomForestClassifier(),
+        {'n_estimators': [100]},
+        'Random Forest'
+    )
+    mlp = (
+        MLPClassifier(),
+        {'alpha': [1],
+         'max_iter': [1000]},
+        'MLP Classifier'
     )
 
-    mlp = make_pipeline(
-        mne.decoding.Vectorizer(),  # Transform n-dimensional array into 2D array of n_samples by n_features.
-        MinMaxScaler(),  # Transforms features by scaling each feature to a given range (0, 1).
-        MLPClassifier(alpha=1, max_iter=1000)  # linear model for classification
-    )
-
-    rfc = make_pipeline(
-        mne.decoding.Vectorizer(),  # Transform n-dimensional array into 2D array of n_samples by n_features.
-        MinMaxScaler(),  # Transforms features by scaling each feature to a given range (0, 1).
-        RandomForestClassifier(n_estimators=100)  # linear model for classification
-    )
+    classifiers = [lr, svc, rfc, mlp]
 
     # #############################################################################
     # Plot calibration plots
@@ -53,11 +51,9 @@ def compare(experiences):
     ax2 = plt.subplot2grid((3, 1), (2, 0))
 
     ax1.plot([0, 1], [0, 1], "k:", label="Perfectly calibrated")
-    for clf, name in [(lr, 'Logistic'),
-                      (svc, 'Support Vector Classification'),
-                      (rfc, 'Random Forest'),
-                      (mlp, 'MLP Classifier')]:
-        clf.fit(X_train, y_train)
+    for classifier, param_grid, name in classifiers:
+        # clf.fit(X_train, y_train)
+        clf = calibrate_classifier(X_train, X_test, y_train, y_test, classifier, param_grid)
         if hasattr(clf, "predict_proba"):
             prob_pos = clf.predict_proba(X_test)[:, 1]
         else:  # use decision function
@@ -86,19 +82,9 @@ def compare(experiences):
     plt.show()
 
 
-def calibrate(experiences):
-    param_grid = {'C': [x/10 for x in range(1, 21)],
-                  "penalty": ["l2"], "n_jobs": [-1],
-                  "solver": ['newton-cg', 'lbfgs', 'liblinear', 'sag', 'saga']}
-    return calibrate_classifier(experiences, LogisticRegression(), param_grid)
+def calibrate_classifier(X_train, X_test, y_train, y_test, classifier, param_grid):
 
-
-def calibrate_classifier(experiences, classifier, param_grid):
-    X, y = utils.flatten_experiences(experiences)
-
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.30, random_state=42)
-
-    lr = make_pipeline(
+    pipeline = make_pipeline(
         mne.decoding.Vectorizer(),  # Transform n-dimensional array into 2D array of n_samples by n_features.
         MinMaxScaler(),  # Transforms features by scaling each feature to a given range (0, 1).
         GridSearchCV(classifier,
@@ -106,9 +92,9 @@ def calibrate_classifier(experiences, classifier, param_grid):
                      cv=2, refit=True)
     )
 
-    classifier_fit = lr.fit(X_train, y_train)
+    classifier_fit = pipeline.fit(X_train, y_train)
     best_estimator = classifier_fit._final_estimator.best_estimator_
     print("Best estimator:\n{}".format(best_estimator))
     print("score", classifier_fit.score(X_test, y_test))
 
-    return best_estimator
+    return pipeline
