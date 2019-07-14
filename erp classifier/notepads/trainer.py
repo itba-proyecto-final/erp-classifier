@@ -52,7 +52,7 @@ def get_experiences(file):
     experiences = []
 
     for start, finish in zip(starts, finishes):
-        experiences.append(zip(epochs.get_data()[start+1:finish, :8, 1:], hit_epochs_labels[start+1:finish]))
+        experiences.append(utils.deep_zip(epochs.get_data()[start+1:finish, :8, 1:], hit_epochs_labels[start+1:finish]))
 
     return experiences
 

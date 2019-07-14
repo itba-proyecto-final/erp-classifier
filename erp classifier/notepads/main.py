@@ -1,9 +1,12 @@
+import compare_classifiers
 import trainer
 import tester
 import utils
 
 experiences_list = trainer.get_epochs_data_list(
     ['../data/grid_lights/nati/record-bv-generic-nati-[2019.04.27-19.11.05].vhdr'])
+
+compare_classifiers.compare(experiences_list)
 
 train_experiences = experiences_list[:3]
 test_experiences = experiences_list[3:]

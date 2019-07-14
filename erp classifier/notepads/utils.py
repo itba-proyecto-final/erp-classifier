@@ -1,3 +1,12 @@
+import collections
+
+
+def deep_zip(*args):
+    if all(isinstance(arg, collections.Iterable) for arg in args):
+        return [deep_zip(*vals) for vals in zip(*args)]
+    return args
+
+
 def flatten_experiences(experiences):
     """
     Given a list of epochs data list and a list of label lists,

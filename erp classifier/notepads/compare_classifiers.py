@@ -1,12 +1,8 @@
-import sklearn
 import mne
-import numpy as np
-
 import matplotlib.pyplot as plt
-
-from sklearn import datasets
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.neural_network import MLPClassifier
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import MinMaxScaler
@@ -22,19 +18,9 @@ def compare(experiences):
     # Author: Jan Hendrik Metzen <jhm@informatik.uni-bremen.de>
     # License: BSD Style.
 
-    np.random.seed(0)
-
-    X, y = datasets.make_classification(n_samples=100000, n_features=20,
-                                        n_informative=2, n_redundant=2)
-
     X, y = utils.flatten_experiences(experiences)
 
-    train_samples = 100  # Samples used for training the models
-
-    X_train = X[:train_samples]
-    X_test = X[train_samples:]
-    y_train = y[:train_samples]
-    y_test = y[train_samples:]
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.30, random_state=42)
 
     lr = make_pipeline(
         mne.decoding.Vectorizer(),  # Transform n-dimensional array into 2D array of n_samples by n_features.
@@ -98,3 +84,31 @@ def compare(experiences):
 
     plt.tight_layout()
     plt.show()
+
+
+def calibrate(experiences):
+    param_grid = {'C': [x/10 for x in range(1, 21)],
+                  "penalty": ["l2"], "n_jobs": [-1],
+                  "solver": ['newton-cg', 'lbfgs', 'liblinear', 'sag', 'saga']}
+    return calibrate_classifier(experiences, LogisticRegression(), param_grid)
+
+
+def calibrate_classifier(experiences, classifier, param_grid):
+    X, y = utils.flatten_experiences(experiences)
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.30, random_state=42)
+
+    lr = make_pipeline(
+        mne.decoding.Vectorizer(),  # Transform n-dimensional array into 2D array of n_samples by n_features.
+        MinMaxScaler(),  # Transforms features by scaling each feature to a given range (0, 1).
+        GridSearchCV(classifier,
+                     param_grid,
+                     cv=2, refit=True)
+    )
+
+    classifier_fit = lr.fit(X_train, y_train)
+    best_estimator = classifier_fit._final_estimator.best_estimator_
+    print("Best estimator:\n{}".format(best_estimator))
+    print("score", classifier_fit.score(X_test, y_test))
+
+    return best_estimator
