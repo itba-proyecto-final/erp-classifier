@@ -1,43 +1,54 @@
 import mne
 import matplotlib.pyplot as plt
+import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.neural_network import MLPClassifier
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.svm import LinearSVC
+from sklearn.svm import SVC
 from sklearn.calibration import calibration_curve
 
 import utils
 
 
 def compare(experiences):
+
     X, y = utils.flatten_experiences(experiences)
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.40, random_state=42)
 
     lr = (
         LogisticRegression(),
-        {'C': [x/10 for x in range(1, 21)],
+        {'C': [0.001, 0.01, 0.1, 1, 10],
          "penalty": ["l2"], "n_jobs": [-1],
-         "solver": ['newton-cg', 'lbfgs', 'liblinear', 'sag', 'saga']},
+         'max_iter': [300],
+         "solver": ['lbfgs', 'saga']},
         'Logistic'
     )
     svc = (
-        LinearSVC(),
-        {'C': [90]},
+        SVC(),
+        {'C': [0.001, 0.01, 0.1, 1, 10]},
         'Support Vector Classification'
     )
     rfc = (
         RandomForestClassifier(),
-        {'n_estimators': [100]},
+        {
+            'n_estimators': [1000],
+            'max_features': ['auto', 'log2'],
+            'criterion': ['gini', 'entropy'],
+            "n_jobs": [-1]
+        },
         'Random Forest'
     )
     mlp = (
         MLPClassifier(),
-        {'alpha': [1],
-         'max_iter': [1000]},
+        {'solver': ['lbfgs'],
+         'max_iter': [100],
+         'alpha': 10.0 ** -np.arange(1, 10)
+         # 'hidden_layer_sizes': np.arange(10, 15)
+         },
         'MLP Classifier'
     )
 
@@ -46,14 +57,18 @@ def compare(experiences):
     # #############################################################################
     # Plot calibration plots
 
-    plt.figure(figsize=(10, 10))
+    plt.figure(0, figsize=(10, 10))
     ax1 = plt.subplot2grid((3, 1), (0, 0), rowspan=2)
     ax2 = plt.subplot2grid((3, 1), (2, 0))
 
     ax1.plot([0, 1], [0, 1], "k:", label="Perfectly calibrated")
+
+    best_classifier = None
+
     for classifier, param_grid, name in classifiers:
-        # clf.fit(X_train, y_train)
-        clf = calibrate_classifier(X_train, X_test, y_train, y_test, classifier, param_grid)
+        clf, score = calibrate_classifier(X_train, X_test, y_train, y_test, classifier, param_grid, name)
+        if best_classifier is None or best_classifier[1] < score:
+            best_classifier = (clf, score)
         if hasattr(clf, "predict_proba"):
             prob_pos = clf.predict_proba(X_test)[:, 1]
         else:  # use decision function
@@ -81,20 +96,27 @@ def compare(experiences):
     plt.tight_layout()
     plt.show()
 
+    print("Best all around classifier: {} with score: {}".format(best_classifier[0]._final_estimator.best_estimator_,
+                                                                 best_classifier[1]))
 
-def calibrate_classifier(X_train, X_test, y_train, y_test, classifier, param_grid):
+    return best_classifier[0], best_classifier[1]
+
+
+def calibrate_classifier(X_train, X_test, y_train, y_test, classifier, param_grid, classifier_name):
 
     pipeline = make_pipeline(
         mne.decoding.Vectorizer(),  # Transform n-dimensional array into 2D array of n_samples by n_features.
         MinMaxScaler(),  # Transforms features by scaling each feature to a given range (0, 1).
         GridSearchCV(classifier,
                      param_grid,
-                     cv=2, refit=True)
+                     cv=10, refit=True)
     )
 
     classifier_fit = pipeline.fit(X_train, y_train)
     best_estimator = classifier_fit._final_estimator.best_estimator_
-    print("Best estimator:\n{}".format(best_estimator))
-    print("score", classifier_fit.score(X_test, y_test))
+    best_score = classifier_fit._final_estimator.best_score_
+    print("Best {}:\n{} with score: {}".format(classifier_name, best_estimator, best_score))
+    test_score = classifier_fit.score(X_test, y_test)
+    print("Test score: ", test_score)
 
-    return pipeline
+    return pipeline, best_score

@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
 import joblib
+import mne
 import numpy as np
-from sklearn.metrics import roc_curve, auc, accuracy_score
+from sklearn.metrics import roc_curve, auc, accuracy_score, confusion_matrix, classification_report
 from scipy import interp
 
 import utils
@@ -19,7 +20,7 @@ def plot_prediction_results(prediction_proba, labels_test):
     roc_auc = auc(fprs, tprs)
     std_auc = np.std(roc_auc)
 
-    plt.figure(figsize=(20, 10))
+    plt.figure(1, figsize=(20, 10))
     plt.plot(fprs, tprs, color='b', label=r'ROC (AUC = %0.2f $\pm$ %0.2f)' % (roc_auc, std_auc),
              lw=2, alpha=.8)
 
@@ -35,13 +36,47 @@ def plot_prediction_results(prediction_proba, labels_test):
     plt.show()
 
 
-def test_classifier(classifier_path, test_experiences):
+def plot_confusion_matrix(prediction, labels_test):
+    confusion_m = confusion_matrix(labels_test, prediction)
+    print("Confusion matrix")
+    print(confusion_m)
+
+    # Normalized confusion matrix
+    confusion_m_norm = confusion_m.astype(float) / confusion_m.sum(axis=1)[:, np.newaxis]
+
+    target_names = ['noerror', 'error']
+
+    # Classification report
+    report = classification_report(labels_test, prediction, target_names=target_names)
+    print(report)
+
+    # Plot it
+    plt.figure(2, figsize=(20, 10))
+    plt.imshow(confusion_m_norm, interpolation='nearest', cmap=plt.cm.Blues)
+    tick_marks = np.arange(len(target_names))
+    plt.title('Normalized Confusion matrix')
+    plt.xlabel('Predicted label')
+    plt.xticks(tick_marks, target_names, rotation=45)
+    plt.ylabel('True label')
+    plt.yticks(tick_marks, target_names)
+    plt.clim(0, 1)
+    plt.colorbar()
+    mne.viz.tight_layout()
+    plt.show()
+
+
+def test_classifier_from_file(classifier_path, test_experiences):
+    classifier = joblib.load(classifier_path)
+    test_classifier(classifier, test_experiences)
+
+
+def test_classifier(classifier, test_experiences):
     testing_epochs_data, testing_labels = utils.flatten_experiences(test_experiences)
 
-    classifier = joblib.load(classifier_path)
     prediction = classifier.predict(testing_epochs_data)
     print("Accuracy: {}".format(accuracy_score(testing_labels, prediction)))
 
     prediction_proba = classifier.predict_proba(testing_epochs_data)
     plot_prediction_results(prediction_proba, testing_labels)
+    plot_confusion_matrix(prediction, testing_labels)
     return prediction

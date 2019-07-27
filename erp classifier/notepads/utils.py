@@ -16,7 +16,7 @@ def flatten_experiences(experiences):
     """
 
     samples = [sample for experience in experiences for sample in experience]
-    epochs_data = [epoch for epoch,_ in samples]
+    epochs_data = [epoch for epoch, _ in samples]
     labels = [label for _, label in samples]
     return epochs_data, labels
 
