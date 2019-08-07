@@ -1,3 +1,4 @@
+import matplotlib
 import matplotlib.pyplot as plt
 import joblib
 import mne
@@ -21,7 +22,7 @@ def plot_prediction_results(prediction_proba, labels_test):
     std_auc = np.std(roc_auc)
 
     plt.figure(1, figsize=(20, 10))
-    plt.plot(fprs, tprs, color='b', label=r'ROC (AUC = %0.2f $\pm$ %0.2f)' % (roc_auc, std_auc),
+    plt.plot(fprs, tprs, color='b', label=r'ROC (AUC = %0.2f)' % roc_auc,
              lw=2, alpha=.8)
 
     # Chance line
@@ -30,7 +31,7 @@ def plot_prediction_results(prediction_proba, labels_test):
     plt.title('ROC curve')
     plt.xlabel('False positive rate')
     plt.xlim([-0.05, 1.05])
-    plt.ylabel('True positive radte')
+    plt.ylabel('True positive rate')
     plt.ylim([-0.05, 1.05])
     plt.legend(loc="best")
     plt.show()
@@ -77,6 +78,10 @@ def test_classifier(classifier, test_experiences):
     print("Accuracy: {}".format(accuracy_score(testing_labels, prediction)))
 
     prediction_proba = classifier.predict_proba(testing_epochs_data)
+
+    font = {'size': 22}
+    matplotlib.rc('font', **font)
+
     plot_prediction_results(prediction_proba, testing_labels)
     plot_confusion_matrix(prediction, testing_labels)
     return prediction

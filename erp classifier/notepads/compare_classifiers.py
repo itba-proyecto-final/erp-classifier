@@ -1,4 +1,5 @@
 import mne
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.linear_model import LogisticRegression
@@ -14,6 +15,9 @@ import utils
 
 
 def compare(experiences):
+
+    font = {'size': 16}
+    matplotlib.rc('font', **font)
 
     X, y = utils.flatten_experiences(experiences)
 
@@ -87,7 +91,7 @@ def compare(experiences):
     ax1.set_ylabel("Fraction of positives")
     ax1.set_ylim([-0.05, 1.05])
     ax1.legend(loc="lower right")
-    ax1.set_title('Calibration plots  (reliability curve)')
+    ax1.set_title('Calibration plots  (reliability curve)', fontsize=22)
 
     ax2.set_xlabel("Mean predicted value")
     ax2.set_ylabel("Count")

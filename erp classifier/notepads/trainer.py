@@ -65,7 +65,8 @@ def get_epochs_data_list(file_list):
     return experiences_list
 
 
-def train_classifier(experiences, classifier_path, scikit_classifier=LogisticRegression()):
+def train_classifier(experiences, classifier_path, scikit_classifier=LogisticRegression(penalty='l2', max_iter=300,
+                                                                                        C=10, solver='lbfgs')):
     """
     TODO: hacer bien
     :param experiences:
@@ -83,12 +84,3 @@ def train_classifier(experiences, classifier_path, scikit_classifier=LogisticReg
     classifier_fit = classifier.fit(epochs_data, labels)
     joblib.dump(classifier_fit, classifier_path)
     return classifier_fit
-
-
-# if __name__ == "__main__":
-    # epochs, epochs_labels = get_epochs_data(
-    #     '../data/grid_lights/nati/record-bv-generic-nati-[2019.04.27-19.11.05].vhdr')
-    # epochs, epochs_labels = flatten_epochs_data([epochs, epochs], [epochs_labels, epochs_labels])
-    # print(epochs)
-    # print(epochs_labels)
-    # train_classifier(epochs, epochs_labels, "../classifiers/hola.joblib", LogisticRegression())
