@@ -23,7 +23,7 @@ def flatten_experiences(experiences):
 
 def grid_lights_rewards(prediction):
     if prediction is None:
-        return 10
+        return 0
     else:
         return -1 * prediction
 
